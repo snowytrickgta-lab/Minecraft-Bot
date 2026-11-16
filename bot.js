@@ -5,56 +5,32 @@ function crearBot() {
     host: 'ElPuebleteMono.aternos.me',
     username: 'El_Primas777BOT',
     version: false,
-    physicsEnabled: false,
-    brand: 'vanilla',
-    // Desactiva por completo los módulos internos de físicas y movimiento
-    plugins: {
-      physics: false,
-      entities: false,
-      ray_trace: false,
-      digging: false,
-      place_block: false
-    }
+    physicsEnabled: false
   });
 
-  // Bloquea absolutamente todos los paquetes de posición, rotación y acción física
-  const paquetesBloqueados = new Set([
-    'position',
-    'position_look',
-    'look',
-    'flying',
-    'entity_action',
-    'arm_animation',
-    'held_item_slot',
-    'abilities'
-  ]);
-
+  // Desactiva por completo el envío de cualquier paquete de movimiento
   const originalWrite = bot._client.write.bind(bot._client);
   bot._client.write = (name, params) => {
-    if (paquetesBloqueados.has(name)) {
-      return; // No envía ningún dato físico o de movimiento al servidor
+    if (
+      name === 'position' ||
+      name === 'position_look' ||
+      name === 'look' ||
+      name === 'flying'
+    ) {
+      return; // No envía ningún paquete de movimiento al servidor
     }
     return originalWrite(name, params);
   };
 
-  bot.on('login', () => {
-    console.log('Conectado al servidor.');
-  });
-
   bot.on('spawn', () => {
-    console.log('¡El_Primas777BOT entró sin físicas ni movimiento!');
+    console.log('¡El_Primas777BOT entró sin enviar paquetes de movimiento!');
   });
 
-  bot.on('kicked', (reason) => {
-    console.log('EXPULSADO POR:', JSON.stringify(reason));
-  });
+  bot.on('kicked', (reason) => console.log('Expulsado por:', JSON.stringify(reason)));
+  bot.on('error', (err) => console.log('Error:', err.message));
 
-  bot.on('error', (err) => {
-    console.log('ERROR:', err.message);
-  });
-
-  bot.on('end', (reason) => {
-    console.log('Desconectado. Razón:', reason, '| Reintentando en 30s...');
+  bot.on('end', () => {
+    console.log('Desconectado. Reintentando en 30 segundos...');
     setTimeout(crearBot, 30000);
   });
 }
