@@ -8,18 +8,18 @@ function crearBot() {
     physicsEnabled: false
   });
 
-  // Intercepta la escritura de paquetes: deja pasar teleport_confirm y keep_alive,
-  // pero bloquea absolutamente todos los paquetes de posición
-  const originalWrite = bot._client.write.bind(bot._client);
-  bot._client.write = (name, params) => {
-    if (name === 'position' || name === 'position_look') {
-      return; // Bloquea todo paquete de coordenadas que provoca "Invalid move player packet"
+  // En Minecraft 26.3 el servidor exige recibir 'tick_end' en cada tick
+  // para no expulsar al bot por "Invalid move player packet received"
+  bot.on('physicsTick', () => {
+    if (bot._client && bot._client.state === 'play') {
+      try {
+        bot._client.write('tick_end', {});
+      } catch (e) {}
     }
-    return originalWrite(name, params);
-  };
+  });
 
   bot.on('spawn', () => {
-    console.log('¡El_Primas777BOT conectado y estable en ElPuebleteMono!');
+    console.log('¡El_Primas777BOT conectado y estable en Minecraft 26.3!');
   });
 
   bot.on('kicked', (reason) => {
