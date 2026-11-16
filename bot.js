@@ -4,33 +4,23 @@ function crearBot() {
   const client = mc.createClient({
     host: 'ElPuebleteMono.aternos.me',
     username: 'El_Primas777BOT',
-    version: false // Detecta automáticamente la versión 26.3 del servidor
+    version: false
   });
 
   client.on('login', () => {
-    console.log('¡El_Primas777BOT conectado mediante protocolo puro!');
+    console.log('¡El_Primas777BOT entró al servidor!');
   });
 
-  // Cuando el servidor envía la posición inicial (spawn), confirmamos el teletransporte
-  // y devolvemos exactamente las mismas coordenadas recibidas sin modificar nada
+  // Confirma el teletransporte inicial, pero NO envía ningún paquete de posición
   client.on('position', (packet) => {
-    console.log('Posición inicial recibida del servidor:', packet.x, packet.y, packet.z);
     if (packet.teleportId !== undefined) {
       client.write('teleport_confirm', { teleportId: packet.teleportId });
+      console.log('Teletransporte confirmado (sin enviar paquetes de movimiento).');
     }
-    client.write('position_look', {
-      x: packet.x,
-      y: packet.y,
-      z: packet.z,
-      yaw: packet.yaw,
-      pitch: packet.pitch,
-      onGround: false,
-      flags: 0
-    });
   });
 
   client.on('kick_disconnect', (packet) => {
-    console.log('EXPULSADO POR EL SERVIDOR:', JSON.stringify(packet));
+    console.log('EXPULSADO POR:', JSON.stringify(packet));
   });
 
   client.on('disconnect', (packet) => {
