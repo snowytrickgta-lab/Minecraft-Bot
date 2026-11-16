@@ -1,48 +1,48 @@
-const mineflayer = require('mineflayer');
+const mc = require('minecraft-protocol');
 
 function crearBot() {
-  const bot = mineflayer.createBot({
+  const client = mc.createClient({
     host: 'ElPuebleteMono.aternos.me',
     username: 'El_Primas777BOT',
-    version: false,
-    physicsEnabled: false
+    version: false // Detecta automáticamente la versión 26.3 del servidor
   });
 
-  // Inyecta 'tick_end' inmediatamente después de cada paquete de movimiento o posición
-  // para evitar que los servidores 26.x lo expulsen a los 2 segundos
-  const originalWrite = bot._client.write.bind(bot._client);
-  bot._client.write = (name, params) => {
-    const res = originalWrite(name, params);
+  client.on('login', () => {
+    console.log('¡El_Primas777BOT conectado mediante protocolo puro!');
+  });
 
-    if (
-      name === 'position' ||
-      name === 'position_look' ||
-      name === 'look' ||
-      name === 'flying'
-    ) {
-      try {
-        originalWrite('tick_end', {});
-      } catch (e) {}
+  // Cuando el servidor envía la posición inicial (spawn), confirmamos el teletransporte
+  // y devolvemos exactamente las mismas coordenadas recibidas sin modificar nada
+  client.on('position', (packet) => {
+    console.log('Posición inicial recibida del servidor:', packet.x, packet.y, packet.z);
+    if (packet.teleportId !== undefined) {
+      client.write('teleport_confirm', { teleportId: packet.teleportId });
     }
-
-    return res;
-  };
-
-  bot.on('spawn', () => {
-    console.log('V2 - ¡El_Primas777BOT entró con parches de tick_end!');
+    client.write('position_look', {
+      x: packet.x,
+      y: packet.y,
+      z: packet.z,
+      yaw: packet.yaw,
+      pitch: packet.pitch,
+      onGround: false,
+      flags: 0
+    });
   });
 
-  // Imprime todo el objeto completo sin ocultar [Object]
-  bot.on('kicked', (reason) => {
-    console.log('EXPULSADO POR (COMPLETO):', JSON.stringify(reason, null, 2));
+  client.on('kick_disconnect', (packet) => {
+    console.log('EXPULSADO POR EL SERVIDOR:', JSON.stringify(packet));
   });
 
-  bot.on('error', (err) => {
+  client.on('disconnect', (packet) => {
+    console.log('DESCONECTADO:', JSON.stringify(packet));
+  });
+
+  client.on('error', (err) => {
     console.log('ERROR:', err.message);
   });
 
-  bot.on('end', () => {
-    console.log('Desconectado. Reintentando en 30 segundos...');
+  client.on('end', (reason) => {
+    console.log('Conexión cerrada:', reason, '| Reintentando en 30s...');
     setTimeout(crearBot, 30000);
   });
 }
