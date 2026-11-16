@@ -4,31 +4,50 @@ function crearBot() {
   const bot = mineflayer.createBot({
     host: 'ElPuebleteMono.aternos.me',
     username: 'El_Primas777BOT',
-    version: false,
-    plugins: {
-      physics: false
+    version: false
+  });
+
+  // Desactiva las físicas al inicio para evitar caídas o movimientos durante la carga
+  bot.physicsEnabled = false;
+
+  // Parche para 26.3: envía tick_end cada 50ms (1 tick de Minecraft) una vez dentro
+  let tickInterval = null;
+
+  bot.on('spawn', () => {
+    console.log('¡El_Primas777BOT entró al servidor!');
+    if (!tickInterval) {
+      tickInterval = setInterval(() => {
+        if (bot._client && bot._client.state === 'play') {
+          try {
+            bot._client.write('tick_end', {});
+          } catch (e) {}
+        }
+      }, 50);
     }
   });
 
-  // Evita que Mineflayer envíe paquetes de posición o rotación vacíos
-  bot._client.on('packet', (data, meta) => {
-    if (meta.name === 'position') {
-      bot._client.write('teleport_confirm', { teleportId: data.teleportId });
-    }
-  });
+  // Escucha los mensajes del chat y responde al privado
+  bot.on('chat', (username, message) => {
+    // Evita que el bot se responda a sí mismo
+    if (username === bot.username) return;
 
-  bot.on('login', () => {
-    console.log('¡Conectado sin físicas!');
+    // Detecta el comando (sin importar mayúsculas o espacios extra)
+    if (message.trim().toLowerCase() === '!vienen las primas') {
+      bot.chat(`/msg ${username} DONDE, LAS NECESITO!, PASAME SUS NUMEROS`);
+    }
   });
 
   bot.on('kicked', (reason) => console.log('Expulsado:', JSON.stringify(reason)));
   bot.on('error', (err) => console.log('Error:', err.message));
 
   bot.on('end', () => {
+    if (tickInterval) {
+      clearInterval(tickInterval);
+      tickInterval = null;
+    }
     console.log('Desconectado. Reintentando en 30 segundos...');
     setTimeout(crearBot, 30000);
   });
 }
 
 crearBot();
-
