@@ -7,14 +7,12 @@ function crearBot() {
     version: false
   });
 
-  // Desactiva las físicas al inicio para evitar caídas o movimientos durante la carga
   bot.physicsEnabled = false;
-
-  // Parche para 26.3: envía tick_end cada 50ms (1 tick de Minecraft) una vez dentro
   let tickInterval = null;
 
-  bot.on('spawn', () => {
-    console.log('¡El_Primas777BOT entró al servidor!');
+  // Inicia tick_end desde 'login' (antes del spawn) para cubrir desde el primer milisegundo
+  bot.on('login', () => {
+    console.log('Login completado, activando tick_end...');
     if (!tickInterval) {
       tickInterval = setInterval(() => {
         if (bot._client && bot._client.state === 'play') {
@@ -26,14 +24,22 @@ function crearBot() {
     }
   });
 
-  // Escucha los mensajes del chat y responde al privado
-  bot.on('chat', (username, message) => {
-    // Evita que el bot se responda a sí mismo
-    if (username === bot.username) return;
+  bot.on('spawn', () => {
+    console.log('¡El_Primas777BOT entró al servidor!');
+  });
 
-    // Detecta el comando (sin importar mayúsculas o espacios extra)
-    if (message.trim().toLowerCase() === '!vienen las primas') {
-      bot.chat(`/msg ${username} DONDE, LAS NECESITO!, PASAME SUS NUMEROS`);
+  // Escucha todo el texto del chat de forma compatible con formatos personalizados de Aternos
+  bot.on('messagestr', (message) => {
+    // Busca si el mensaje contiene "!vienen las primas" y extrae el nombre del jugador
+    if (message.toLowerCase().includes('!vienen las primas')) {
+      // Detecta formatos típicos como "<Jugador> !vienen las primas" o "Jugador: !vienen las primas"
+      const match = message.match(/^<([^>]+)>/) || message.match(/^([a-zA-Z0-9_]{3,16}):/);
+      if (match && match[1] !== bot.username) {
+        const jugador = match[1];
+        setTimeout(() => {
+          bot.chat(`/msg ${jugador} DONDE, LAS NECESITO!, PASAME SUS NUMEROS`);
+        }, 500);
+      }
     }
   });
 
