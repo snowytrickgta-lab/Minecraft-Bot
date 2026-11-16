@@ -1,11 +1,11 @@
 {
   "name": "el-primas-bot",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js"
   },
   "dependencies": {
-    "mineflayer": "latest"
+    "mineflayer": "^4.35.0"
   }
 }
