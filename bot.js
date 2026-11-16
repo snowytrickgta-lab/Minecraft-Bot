@@ -1,40 +1,34 @@
-const mc = require('minecraft-protocol');
+const mineflayer = require('mineflayer');
 
 function crearBot() {
-  const client = mc.createClient({
+  const bot = mineflayer.createBot({
     host: 'ElPuebleteMono.aternos.me',
     username: 'El_Primas777BOT',
-    version: false
-  });
-
-  client.on('login', () => {
-    console.log('¡El_Primas777BOT entró al servidor!');
-  });
-
-  // Confirma el teletransporte inicial, pero NO envía ningún paquete de posición
-  client.on('position', (packet) => {
-    if (packet.teleportId !== undefined) {
-      client.write('teleport_confirm', { teleportId: packet.teleportId });
-      console.log('Teletransporte confirmado (sin enviar paquetes de movimiento).');
+    version: false,
+    plugins: {
+      physics: false
     }
   });
 
-  client.on('kick_disconnect', (packet) => {
-    console.log('EXPULSADO POR:', JSON.stringify(packet));
+  // Evita que Mineflayer envíe paquetes de posición o rotación vacíos
+  bot._client.on('packet', (data, meta) => {
+    if (meta.name === 'position') {
+      bot._client.write('teleport_confirm', { teleportId: data.teleportId });
+    }
   });
 
-  client.on('disconnect', (packet) => {
-    console.log('DESCONECTADO:', JSON.stringify(packet));
+  bot.on('login', () => {
+    console.log('¡Conectado sin físicas!');
   });
 
-  client.on('error', (err) => {
-    console.log('ERROR:', err.message);
-  });
+  bot.on('kicked', (reason) => console.log('Expulsado:', JSON.stringify(reason)));
+  bot.on('error', (err) => console.log('Error:', err.message));
 
-  client.on('end', (reason) => {
-    console.log('Conexión cerrada:', reason, '| Reintentando en 30s...');
+  bot.on('end', () => {
+    console.log('Desconectado. Reintentando en 30 segundos...');
     setTimeout(crearBot, 30000);
   });
 }
 
 crearBot();
+
